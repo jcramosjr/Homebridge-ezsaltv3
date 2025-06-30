@@ -1,27 +1,34 @@
+// index.js — Updated for Homebridge v2.0 plugin API
 const mqtt = require('mqtt');
 
+let AccessoryPlugin, AccessoryConfig;
 let Service, Characteristic;
 
 module.exports = (api) => {
+  AccessoryPlugin = api.hap.AccessoryPlugin;
+  AccessoryConfig = api.hap.AccessoryConfig;
   Service = api.hap.Service;
   Characteristic = api.hap.Characteristic;
-  api.registerAccessory('EZsaltTasmotaSensor', EZsaltTasmotaSensor);
+
+  api.registerAccessory('homebridge-ezsalt', EZsaltAccessory);
 };
 
-class EZsaltTasmotaSensor {
-  constructor(log, config) {
+class EZsaltAccessory extends AccessoryPlugin {
+  constructor(log, config, api) {
+    super(log, config, api);
     this.log = log;
+    this.config = config;
     this.name = config.name || 'Salt Sensor';
     this.tankDepthMm = config.tankDepthMm || 1200;
     this.thresholdPct = config.thresholdPct || 25;
     this.topic = config.topic || 'tele/ezsalt/SENSOR';
     this.distanceKey = config.distanceKey || 'VL53L0X.Distance';
-
-    this.service = new Service.OccupancySensor(this.name);
-    this.batteryService = new Service.Battery(this.name + ' Salt Level');
-    this.distanceService = new Service.LightSensor(this.name + ' Distance');
     this.lastSaltLevelPct = 0;
     this.lastDistanceMm = 0;
+
+    this.occupancyService = new Service.OccupancySensor(this.name);
+    this.batteryService = new Service.Battery(this.name + ' Salt Level');
+    this.distanceService = new Service.LightSensor(this.name + ' Distance');
 
     this.client = mqtt.connect(config.mqttUrl || 'mqtt://localhost', {
       username: config.mqttUsername,
@@ -45,7 +52,7 @@ class EZsaltTasmotaSensor {
         this.lastSaltLevelPct = levelPct;
         this.lastDistanceMm = distance;
 
-        this.service.updateCharacteristic(Characteristic.OccupancyDetected, isOccupied);
+        this.occupancyService.updateCharacteristic(Characteristic.OccupancyDetected, isOccupied);
         this.batteryService.updateCharacteristic(Characteristic.BatteryLevel, Math.round(levelPct));
         this.batteryService.updateCharacteristic(
           Characteristic.StatusLowBattery,
@@ -70,11 +77,11 @@ class EZsaltTasmotaSensor {
   }
 
   getServices() {
-    const info = new Service.AccessoryInformation()
+    const infoService = new Service.AccessoryInformation()
       .setCharacteristic(Characteristic.Manufacturer, 'EZsalt')
       .setCharacteristic(Characteristic.Model, 'Sensor v3')
       .setCharacteristic(Characteristic.SerialNumber, 'EZSALT0001');
 
-    return [info, this.service, this.batteryService, this.distanceService];
+    return [infoService, this.occupancyService, this.batteryService, this.distanceService];
   }
 }
