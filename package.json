@@ -1,0 +1,17 @@
+{
+  "name": "homebridge-ezsalt",
+  "version": "1.0.0",
+  "description": "EZsalt Sensor v3 plugin with MQTT and Eve support",
+  "main": "index.js",
+  "keywords": ["homebridge-plugin", "ezsalt", "mqtt", "sensor", "eve"],
+  "engines": {
+    "homebridge": ">=1.6.0",
+    "node": ">=14.17.0"
+  },
+  "dependencies": {
+    "mqtt": "^5.0.0"
+  },
+  "homebridge": {
+    "accessories": ["EZsaltTasmotaSensor"]
+  }
+}
